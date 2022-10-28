@@ -22,9 +22,6 @@ PARAMETERS=(
     ParameterKey="StepFuncToDeleteStacksInSequence",ParameterValue="${StepFuncToDeleteStacksInSequence}"
 )
 
-    # "${DEFAULT_PARAMETERS[@]}"
-    # ParameterKey="AppComponentId",ParameterValue="Generic"
-
 ###--------------------------------------------------------
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###--------------------------------------------------------
