@@ -1,0 +1,248 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  Given an ARRAY of Strings (StackNames) under the JSON-element named "deleteInSequence:",
+  this will trigger "DeleteStack()" AWS-API calls.. .. in SEQUENCE.
+  If any of the Array-items are NOT simple-strings (assumed to be JSON), it will trigger the
+  COMPANION StepFunction (to delete the stacks-inside-that-JSON .. in PARALLEL).
+  Pass a "SNSTopic:" topmost element as part of the Input-json, to dynamically configure where you receive error notifications.
+ 
+Parameters:
+
+  ENV:
+    Type: String
+
+  ProjectId:
+    Type: String
+    AllowedPattern: "[a-zA-Z][a-zA-Z0-9-]+"
+
+  StepFuncName:
+    Type: String
+    Default: "DeleteCFTStacksInSequence"
+    Description: >-
+      ATTENTION !! Not ARN.  Just name only.  Any additional IAM Roles that you'd like to use to ensure ACCESS-DENIED does not happen.
+
+  StepFuncExecutionRoleName:
+    Type: String
+    Default: "StepFunctionExecution-Generic"
+    Description: >-
+      ATTENTION !! Not ARN.  Just name only.
+      An IAM Role that allows StepFunction to invoke AWS APIs for most of the services, incl. IAM and CFM.. as well as write to CWLogs.
+
+  StepFuncToDeleteStacksInParallel:
+    Type: String
+    Default: "DeleteStacksInParallel"
+    Description: >-
+      The __OTHER__ StepFunction that works with this one.  The _OTHER_ one deletes Stacks in PARALLEL (unlike this one).
+
+Resources:
+
+  MyStateMachine:
+
+    ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-stepfunctions-statemachine.html#cfn-stepfunctions-statemachine-statemachinetype
+    Type: 'AWS::StepFunctions::StateMachine'
+
+    Properties:
+      StateMachineType: STANDARD
+      StateMachineName: !Ref StepFuncName
+
+      RoleArn: !Join
+        - ':'
+        - - 'arn:aws:iam'
+          - "" ### IAM ARNs do NOT have AWS::Region in it
+          - !Ref 'AWS::AccountId'
+          - !Sub 'role/${StepFuncExecutionRoleName}'    ### !!! ATTENTION !!! Remove/Replace the line
+
+      ### https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-choice-state.html
+      ### ADVANCED (External Inputs): https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html#connect-wait-token
+      ### use ${AppComponentId} within the JSON content below.
+      DefinitionString: !Sub |
+        {
+          "Comment": "Given an ARRAY of Strings (StackNames) under the JSON-element named 'deleteInSequence:', this will trigger 'DeleteStack()' AWS-API calls.. .. in SEQUENCE.  If any of the Array-items are NOT simple-strings (assumed to be JSON), it will trigger the COMPANION StepFunction (to delete the stacks-inside-that-JSON .. in PARALLEL).  Pass a 'SNSTopic:' topmost element as part of the Input-json, to dynamically configure where you receive error notifications.",
+          "StartAt": "Is Input a Sequence-of-Stacks to be deleted?",
+          "States": {
+            "Is Input a Sequence-of-Stacks to be deleted?": {
+              "Type": "Choice",
+              "Choices": [ {
+                  "Comment": "$.deleteInSequence is present",
+                  "Variable": "$.deleteInSequence",
+                  "IsPresent": true,
+                  "Next": "Initialize Loop"
+              } ],
+              "Default": "Failure SNS Publish"
+            },
+            "Initialize Loop": {
+              "Type": "Pass",
+              "Parameters": {
+                "deleteInSequence.$": "$.deleteInSequence",
+                "counter": 0,
+                "maxIterations.$": "States.ArrayLength($.deleteInSequence)"
+              },
+              "ResultPath": "$",
+              "Next": "look at CURRENT item in Array"
+            },
+            "look at CURRENT item in Array": {
+              "Comment": "NOTE: we cannot MERGE this 'Pass-State' with preceeding 'Pass-State', since 'counter' must be ALREADY PRE-EXIST PRIOR to this 'Pass-State' !!",
+              "Type": "Pass",
+              "Parameters": {
+                "deleteInSequence.$": "$.deleteInSequence",
+                "counter.$": "$.counter",
+                "maxIterations.$": "$.maxIterations",
+                "currentItem.$": "States.ArrayGetItem($.deleteInSequence, $.counter)"
+              },
+              "ResultPath": "$",
+              "Next": "StackName or JSON?"
+            },
+            "StackName or JSON?": {
+              "Type": "Choice",
+              "Choices": [ {
+                  "Comment": "If currentItem is a simple string, then proceed to deleting the Stack whose name it is.",
+                  "Variable": "$.currentItem",
+                  "IsString": true,
+                  "Next": "DeleteStack"
+              } ],
+              "Default": "StartSyncExecution"
+            },
+            "StartSyncExecution": {
+              "Comment": "Assuming this current-item is a JSON-Array, invoke the other StepFn to delete all the stacks in that JSON-Array",
+              "Type": "Task",
+              "Resource": "arn:aws:states:::states:startExecution.sync:2",
+              "Parameters": {
+                "StateMachineArn": "arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${StepFuncToDeleteStacksInParallel}",
+                "Input.$": "$.currentItem"
+              },
+              "Next": "INcrement Counter",
+              "ResultPath": null
+            },
+            "DeleteStack": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::aws-sdk:cloudformation:deleteStack",
+              "Parameters": {
+                "StackName.$": "States.ArrayGetItem($.deleteInSequence, $.counter)"
+              },
+              "ResultPath": null,
+              "Catch": [ {
+                  "ErrorEquals": [ "States.ALL" ],
+                  "Comment": "CatchAll",
+                  "Next": "Failure SNS Publish"
+              } ],
+              "Next": "Wait"
+            },
+            "Wait": {
+              "Comment": "Wait between DeleteStack & DescribeStack commands, cuz StepFn is very fast.",
+              "Type": "Wait",
+              "Seconds": 10,
+              "Next": "DescribeStack"
+            },
+            "DescribeStack": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::aws-sdk:cloudformation:describeStacks",
+              "Parameters": {
+                "StackName.$": "States.ArrayGetItem($.deleteInSequence, $.counter)"
+              },
+              "ResultPath": "$.StackDetails",
+              "ResultSelector": {  "StackDetails.$": "States.ArrayGetItem($.Stacks, 0)"   },
+              "Next": "is delete-Stack in-progress?",
+              "Catch": [ {
+                  "ErrorEquals": [ "States.ALL" ],
+                  "Comment": "Catch all errors",
+                  "Next": "if No such Stack",
+                  "ResultPath": "$.describeStack"
+              } ]
+            },
+            "if No such Stack": {
+              "Type": "Choice",
+              "Choices": [ {
+                  "Comment": "No such Stack",
+                  "Variable": "$.describeStack.Cause",
+                  "StringMatches": "Stack with id * does not exist*",
+                  "Next": "INcrement Counter"
+              } ],
+              "Default": "Failure SNS Publish"
+            },
+            "is delete-Stack in-progress?": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Comment": "incomplete",
+                  "Or": [
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "CREATE_IN_PROGRESS"
+                    },
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "DELETE_IN_PROGRESS"
+                    },
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "ROLLBACK_IN_PROGRESS"
+                    }
+                  ],
+                  "Next": "Wait between STATUS-CHECKS for Stack-Delete"
+                },
+                {
+                  "Comment": "completed",
+                  "Or": [
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "ROLLBACK_COMPLETE"
+                    },
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "CREATE_COMPLETE"
+                    },
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "DELETE_COMPLETE"
+                    }
+                  ],
+                  "Next": "INcrement Counter"
+                }
+              ],
+              "Default": "Failure SNS Publish"
+            },
+            "Wait between STATUS-CHECKS for Stack-Delete": {
+              "Type": "Wait",
+              "Seconds": 15,
+              "Next": "DescribeStack"
+            },
+            "INcrement Counter": {
+              "Type": "Pass",
+              "Parameters": {
+                "deleteInSequence.$": "$.deleteInSequence",
+                "counter.$": "States.MathAdd($.counter, 1)",
+                "maxIterations.$": "$.maxIterations"
+              },
+              "ResultPath": "$",
+              "Next": "End of Loop (list of Stacks)?"
+            },
+            "End of Loop (list of Stacks)?": {
+              "Type": "Choice",
+              "Choices": [  {
+                  "Variable": "$.counter",
+                  "NumericLessThanPath": "$.maxIterations",
+                  "Comment": "more entries!",
+                  "Next": "look at CURRENT item in Array"
+              } ],
+              "Default": "Success"
+            },
+            "Success": {
+              "Type": "Succeed"
+            },
+            "Failure SNS Publish": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sns:publish",
+              "Parameters": {
+                "Message.$": "States.Format('!! FAILURE !! in {} environment for Project {} - StepFunction ${AWS::StackName}. {}', '${ENV}', '${ProjectId}', States.JsonToString($) )",
+                "TopicArn.$": "States.Format('arn:aws:sns:${AWS::Region}:${AWS::AccountId}:{}', $$.Execution.Input.SNSTopicName )",
+                "MessageAttributes": {
+                  "ENV": { "StringValue": "$.ENV", "DataType": "String" },
+                  "PROJECTID": { "StringValue": "${ProjectId}", "DataType": "String" },
+                  "CONTENT": { "StringValue.$": "States.JsonToString($)", "DataType": "String" }
+                }
+              },
+              "Next": "Fail"
+            },
+            "Fail": {
+              "Type": "Fail"
+            }
+          }
+        }
+
+
+## EoF
