@@ -6,7 +6,6 @@ ArchLayer="Administration"
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###--------------------------------------------------------
 
-AppComponentId="Generic"
 StepFuncName="DeleteStacksInParallel"
 StepFuncExecutionRoleName="StepFunctionExecution-Generic"
 StepFuncToDeleteStacksInSequence="DeleteStacksInSequence"
@@ -26,7 +25,6 @@ PARAMETERS=(
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###--------------------------------------------------------
 
-StepFuncName="DeleteStacksInParallel"
 STACKNAME="StepFunc-${StepFuncName}"
 
 ### EoScript
