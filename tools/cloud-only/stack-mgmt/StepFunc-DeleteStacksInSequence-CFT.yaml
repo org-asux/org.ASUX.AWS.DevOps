@@ -18,7 +18,7 @@ Parameters:
 
   StepFuncName:
     Type: String
-    Default: "DeleteCFTStacksInSequence"
+    Default: "DeleteStacksInSequence"
     Description: >-
       ATTENTION !! Not ARN.  Just name only.  Any additional IAM Roles that you'd like to use to ensure ACCESS-DENIED does not happen.
 
@@ -46,12 +46,7 @@ Resources:
       StateMachineType: STANDARD
       StateMachineName: !Ref StepFuncName
 
-      RoleArn: !Join
-        - ':'
-        - - 'arn:aws:iam'
-          - "" ### IAM ARNs do NOT have AWS::Region in it
-          - !Ref 'AWS::AccountId'
-          - !Sub 'role/${StepFuncExecutionRoleName}'    ### !!! ATTENTION !!! Remove/Replace the line
+      RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${StepFuncExecutionRoleName}'    ### !!! ATTENTION !!! Remove/Replace the line
 
       ### https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-choice-state.html
       ### ADVANCED (External Inputs): https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html#connect-wait-token
@@ -101,10 +96,25 @@ Resources:
                   "IsString": true,
                   "Next": "DeleteStack"
               } ],
-              "Default": "StartSyncExecution"
+              "Default": "Prep for StartSyncExecution"
+            },
+            "Prep for StartSyncExecution": {
+              "Comment": "Before moving forward to StartSyncExecution task(below), insert the SNS-Topic-Name for use by the other StepFunction.",
+              "Type": "Pass",
+              "Parameters": {
+                "maxIterations.$": "$.maxIterations",
+                "counter.$": "$.counter",
+                "deleteInSequence.$": "$.deleteInSequence",
+                "currentItem": {
+                    "SNSTopicName.$": "$$.Execution.Input.SNSTopicName",
+                    "deleteInParallel.$": "$.currentItem.deleteInParallel"
+                }
+              },
+              "ResultPath": "$",
+              "Next": "StartSyncExecution"
             },
             "StartSyncExecution": {
-              "Comment": "Assuming this current-item is a JSON-Array, invoke the other StepFn to delete all the stacks in that JSON-Array",
+              "Comment": "Assuming this current-item is a JSON-Array for PARALLEL-deletion of Stacks, then .. invoke the other StepFn to delete all the stacks in that JSON-Array in PARALLEL",
               "Type": "Task",
               "Resource": "arn:aws:states:::states:startExecution.sync:2",
               "Parameters": {
