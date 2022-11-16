@@ -6,11 +6,6 @@ ArchLayer="Security"
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###--------------------------------------------------------
 
-BOUNDARYPOLICY="arn:aws:iam::${ACCOUNT}:policy/cloudboost_account_operator_boundary_policy"
-# BOUNDARYPOLICY="arn:aws:iam::${ACCOUNT}:policy/my-BoundaryPolicy-PretendAsEnterpriseBoundary"
-
-###----------------------------
-
 AppComponentId="Generic"
 # myRoleName="StepFuncExecution-Generic"
 
