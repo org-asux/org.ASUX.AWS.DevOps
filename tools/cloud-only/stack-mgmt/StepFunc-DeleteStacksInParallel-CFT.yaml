@@ -18,7 +18,7 @@ Parameters:
 
   StepFuncName:
     Type: String
-    Default: "DeleteCFTStacksInParallel"
+    Default: "DeleteStacksInParallel"
     Description: >-
       ATTENTION !! Not ARN.  Just name only.  Any additional IAM Roles that you'd like to use to ensure ACCESS-DENIED does not happen.
 
@@ -143,13 +143,13 @@ Resources:
                       {
                         "Comment": "incomplete",
                         "Or": [
-                          { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                          { "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "CREATE_IN_PROGRESS"
                           },
-                          { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                          { "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "DELETE_IN_PROGRESS"
                           },
-                          { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                          { "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "ROLLBACK_IN_PROGRESS"
                           }
                         ],
@@ -158,13 +158,13 @@ Resources:
                       {
                         "Comment": "completed",
                         "Or": [
-                          {  "Variable": "$.StackDetails.StackDetails.StackStatus",
+                          {  "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "ROLLBACK_COMPLETE"
                           },
-                          { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                          { "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "CREATE_COMPLETE"
                           },
-                          { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                          { "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "DELETE_COMPLETE"
                           }
                         ],
@@ -176,6 +176,11 @@ Resources:
                   "Wait between STATUS-CHECKS for Stack-Delete": {
                     "Type": "Wait",
                     "Seconds": 15,
+                    "Next": "Pass: extract StackName"
+                  },
+                  "Pass: extract StackName": {
+                    "Type": "Pass",
+                    "OutputPath": "$.StackDetails.Stacks[0].StackName",
                     "Next": "DescribeStack"
                   },
                   "Success": { "Type": "Succeed" },
