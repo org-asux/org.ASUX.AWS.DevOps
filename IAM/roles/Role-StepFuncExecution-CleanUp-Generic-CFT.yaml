@@ -24,8 +24,7 @@ Mappings:
     sandbox:
       ReplicaRegion: "us-east-2"
       # ReplicaRegion: "us-west-2"
-      SharedDevOpsS3Bucket: "generic-bucket-176398812144"
-      # SharedDevOpsS3Bucket: "generic-bucket-591580567012"
+      SharedDevOpsS3Bucket: "generic-bucket-" ### Suffix this with ${AWS::AccountId} !!!
 
   sandbox:
 
@@ -135,9 +134,9 @@ Resources:
                 - 'iam:Delete*'
                 - 'iam:Remove*'
               Resource:
-                - !Sub "arn:aws:iam:${AWS::Region}:${AWS::AccountId}:role/*"
-                - !Sub "arn:aws:iam:${AWS::Region}:${AWS::AccountId}:user/*"
-                - !Sub "arn:aws:iam:${AWS::Region}:${AWS::AccountId}:instance-profile/*"    ### EC2 instanceProfiles
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:user/*"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:instance-profile/*"    ### EC2 instanceProfiles
 
               ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awskeymanagementservice.html
             - Sid: 'KMSAll' ### Needed to access encrypted SSM-Parameters and of course ANY Secret
@@ -182,8 +181,8 @@ Resources:
                 - 's3:Delete*'
                 # - 's3:Remove*'   ### No Remove action for S3 !
               Resource:
-                - !Sub [ "arn:aws:s3:::${BucketName}", !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] ]
-                - !Sub [ "arn:aws:s3:::${BucketName}/*", !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] ]
+                - !Sub [ "arn:aws:s3:::${BKTPREFIX}${AWS::AccountId}",   { "BKTPREFIX": !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] } ]
+                - !Sub [ "arn:aws:s3:::${BKTPREFIX}${AWS::AccountId}/*", { "BKTPREFIX": !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] } ]
 
               ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsqs.html
             - Sid: 'SQSPermission'
@@ -201,6 +200,7 @@ Resources:
               Action:
                 - 'sns:Delete*'
                 - 'sns:Remove*'
+                - 'SNS:Publish*'
               Resource:
                 - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
 
@@ -227,11 +227,16 @@ Resources:
             - Sid: 'BeanStalkFullAccess'
               Effect: Allow
               Action:
+                - 'elasticbeanstalk:Describe*'
                 - 'elasticbeanstalk:Delete*'
-                - 'elasticbeanstalk:Remove*'  ### for now RemoveTags only.
+                - 'elasticbeanstalk:Disassociate*'
+                - 'elasticbeanstalk:List*'
+                - 'elasticbeanstalk:RemoveTags'
+                - 'elasticbeanstalk:Terminate*'
               Resource:
                 - '*'
 
+              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awslambda.html
             - Sid: 'LambdaFullAccess'
               Effect: Allow
               Action:
@@ -240,13 +245,15 @@ Resources:
                 # - '*'
                 - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:*'
 
+              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_elasticloadbalancingv2.html
             - Sid: 'ELBFullAccess'
               Effect: Allow
               Action:
                 - 'elasticloadbalancing:Delete*'
-                - 'elasticloadbalancing:Remove*'
+                - 'elasticloadbalancing:Deregister*'
+                - 'elasticloadbalancing:Describe*'
+                - 'elasticloadbalancing:RemoveTags'
               Resource:
-                ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_elasticloadbalancingv2.html
                 # - '*'
                 - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:*'
                 # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/*'
@@ -266,35 +273,56 @@ Resources:
             - Sid: 'AutoScalingFullAccess'
               Effect: Allow
               Action:
-                - 'autoscaling::Describe*'
-                - 'autoscaling::Delete*'
+                - 'autoscaling:Describe*'
+                - 'autoscaling:Delete*'
               Resource:
                 # - '*'
                 - !Sub 'arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:*'
 
+              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsstepfunctions.html
             - Sid: 'StepFunctionFullAccess'
               Effect: Allow
               Action:
-                - 'states:*'
-                # - 'states:StartExecution'
-                # - 'states:StartSyncExecution'
-                # - 'states:StopExecution'
+                - 'states:*'    ### !! ATTN !! invoking other StepFunctions, monitoring them, etc.. .. everything is in scope!
               Resource:
                 # - '*'
                 - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*'
 
+              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsdatabasemigrationservice.html
             - Sid: 'AWSDMSPermission'
               Effect: Allow
               Action:
-                - 'dms:*'
+                - 'dms:Delete*'
+                - 'dms:Describe*'
+                # - 'dms:Untag*' . ## Does _NOT_ Exist !
               Resource:
                 # - '*'
                 - !Sub 'arn:aws:dms:${AWS::Region}:${AWS::AccountId}:*'
 
+              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonec2.html
             - Sid: 'SomeHackerIsGoingToTakeAdvantage'
               Effect: Allow
               Action:
-                - 'ec2:*'
+                - 'ec2:AuthorizeSecurityGroupEgress'    ### When UN-deploying a SG-line-item (for an SG owned by other Stacks)
+                - 'ec2:Delete*'
+                - 'ec2:Describe*'
+                - 'ec2:Get*'
+                - 'ec2:Release*'  ### ReleaseHosts ReleaseAddress
+                - 'ec2:Reset*'
+                - 'ec2:Revoke*'
+                - 'ec2:Untag*'
+              Resource:
+                - '*'
+
+              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscloud9.html
+            - Sid: 'Cloud9FullAccess'
+              Effect: Allow
+              Action:
+                - 'cloud9:Get*'
+                - 'cloud9:List*'
+                - 'cloud9:Delete*'
+                - 'cloud9:Describe*'
+                - 'cloud9:Untag*'
               Resource:
                 - '*'
 
