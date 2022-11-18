@@ -7,7 +7,7 @@ ArchLayer="Administration"
 ###--------------------------------------------------------
 
 StepFuncName="DeleteStacksInParallel"
-StepFuncExecutionRoleName="StepFunctionExecution-Generic"
+StepFuncExecutionRoleName="StepFunctionExecution-CleanUp-Generic"
 StepFuncToDeleteStacksInSequence="DeleteStacksInSequence"
 
 ###--------------------------------------------------------
