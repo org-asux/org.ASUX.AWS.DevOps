@@ -48,8 +48,7 @@ Mappings:
     sandbox:
       ReplicaRegion: "us-east-2"
       # ReplicaRegion: "us-west-2"
-      SharedDevOpsS3Bucket: "generic-bucket-176398812144"
-      # SharedDevOpsS3Bucket: "generic-bucket-591580567012"
+      SharedDevOpsS3Bucket: "generic-bucket-" ### Suffix this with ${AWS::AccountId} !!!
 
   sandbox:
 
@@ -261,18 +260,8 @@ Resources:
                 - 's3:DeleteObjectVersionTagging'
                 # - 's3:DeleteObjects' ## DOES _NOT_ exist.
               Resource:
-                - !Join
-                  - '/'
-                  - - !Join
-                        - ':'
-                        - - 'arn:aws:s3'
-                          - '' ## cannot contain Any Region
-                          - '' ## cannot contain Any Region AWS::AccountId
-                          - !FindInMap
-                            - Environments
-                            - !Ref 'ENV'
-                            - SharedDevOpsS3Bucket
-                    - '*' ### This line will lead to the expression '/*' (which will IGNORE topmost-level objects)
+                - !Sub [ "arn:aws:s3:::${BKTPREFIX}${AWS::AccountId}/*", { "BKTPREFIX": !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] } ]
+                        ### This line will lead to the expression which will IGNORE topmost-level objects
 
             - Sid: 'SQSPermission'
               Effect: Allow
@@ -379,6 +368,13 @@ Resources:
             - Sid: 'SomeHackerIsGoingToTakeAdvantage'
               Action:
                 - 'ec2:*'
+              Resource:
+                - '*'
+              Effect: Allow
+
+            - Sid: 'Cloud9IDEFullAccess'
+              Action:
+                - 'cloud9:*'
               Resource:
                 - '*'
               Effect: Allow
