@@ -99,18 +99,10 @@ Resources:
               "Default": "Prep for StartSyncExecution"
             },
             "Prep for StartSyncExecution": {
-              "Comment": "Before moving forward to StartSyncExecution task(below), insert the SNS-Topic-Name for use by the other StepFunction.",
+              "Comment": "Before moving forward to StartSyncExecution task(below),_ENHANCE_ the INPUT-JSON, by inserting the SNS-Topic-Name (at appropriate location) for use by the other StepFunction.",
               "Type": "Pass",
-              "Parameters": {
-                "maxIterations.$": "$.maxIterations",
-                "counter.$": "$.counter",
-                "deleteInSequence.$": "$.deleteInSequence",
-                "currentItem": {
-                    "SNSTopicName.$": "$$.Execution.Input.SNSTopicName",
-                    "deleteInParallel.$": "$.currentItem.deleteInParallel"
-                }
-              },
-              "ResultPath": "$",
+              "InputPath": "$$.Execution.Input.SNSTopicName",
+              "ResultPath": "$.currentItem.SNSTopicName",
               "Next": "StartSyncExecution"
             },
             "StartSyncExecution": {
