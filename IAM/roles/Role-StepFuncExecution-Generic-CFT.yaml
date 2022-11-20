@@ -112,7 +112,7 @@ Resources:
 
       ManagedPolicyArns:
         ### Provide a List of AWS Policies that you want to ATTACH to this role
-        - 'arn:aws:iam::aws:policy/CloudWatchEventsFullAccess' ### NOTE: Without this you'll get the error "Resource handler returned message: 'arn:aws:iam::685419346405:role/StepFunctionExecution-Generic' is not authorized to create managed-rule"
+        - 'arn:aws:iam::aws:policy/CloudWatchEventsFullAccess' ### NOTE: Without this you'll get the error "Resource handler returned message: 'arn:aws:iam::123456789012:role/StepFunctionExecution-Generic' is not authorized to create managed-rule"
         ### Following POLICY added per: https://docs.aws.amazon.com/xray/latest/devguide/security_iam_service-with-iam.html
         - 'arn:aws:iam::aws:policy/AWSXrayFullAccess'
         # - !Ref ManagedPolicy1
@@ -170,7 +170,7 @@ Resources:
                 - 'iam:*'
                 # - 'iam:get*'
               Resource:
-                - !Sub "arn:aws:iam:${AWS::Region}:${AWS::AccountId}:role/*"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
                 # - !Join
                 #   - ':'
                 #   - - 'arn:aws:iam'
@@ -341,7 +341,7 @@ Resources:
             - Sid: 'AutoScalingFullAccess'
               Effect: Allow
               Action:
-                - 'autoscaling::*'
+                - 'autoscaling:*'
               Resource:
                 # - '*'
                 - !Sub 'arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:*'
