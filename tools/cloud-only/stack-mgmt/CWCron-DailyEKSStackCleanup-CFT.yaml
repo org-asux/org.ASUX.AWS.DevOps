@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  CloudWatch-CRON (a.k.a. EventBridge-CRON).
+  Once-a-day, invokes StepFunctions for destruction of STACKS related to EKS-k8s (CFTs that were derived from AWS' official EKS-QUICKSTART).
+  The list of STACKs to be deleted is HARDCODED in here.
+
+Parameters:
+
+  StepFuncName:
+    Type: String
+    Description: >-
+      ATTENTION !! Not ARN.  Just name only.  Any additional IAM Roles that you'd like to use to ensure ACCESS-DENIED does not happen.
+
+  EventBridgeExecutionRoleName:
+    Type: String
+    Description: >-
+      ATTENTION !! Not ARN.  Just name only.
+      The IAM Role that allows EventBridge to invoke StepFn/Lambda/.. as well as write to CWLogs.
+ 
+  SNSTopicName:
+    Type: String
+    Default: "sandbox-DefaultAllPurposeNotifChannel"  ### Check my "SNS" folder for CFT to create this "All-Purpose" SNS Topic.
+    Description: "Not the ARN.  Just the name"
+
+  ### --------------------- OPTIONAL PARAMETERS ------------------------
+  EventBusName:
+    Type: String
+    Description: "The Name of the EventBus. NOT the ARN !!!  Typically, leave it UN-specified, when 'default' is used"
+    Default: "default"
+
+Resources:
+
+  CronTriggerStepFunc2CleanupEKSStacks:
+
+    ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-events-rule.html
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: >-
+        Once-a-day, invokes StepFunctions for destruction of STACKS related to EKS-k8s (CFTs that were derived from AWS' official EKS-QUICKSTART).
+        The list of STACKs to be deleted is HARDCODED in here.
+      Name: "CronTrigger-StepFunc2Cleanup-EKS-k8s-Stacks"
+      EventBusName: !Ref EventBusName # "default"
+      State: ENABLED  ### DISABLED | ENABLED
+
+      ### https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-rule-schedule.html#eb-cron-expressions
+      ScheduleExpression: 'cron(00 09 * * ? *)' ### 9:00 AM UTC == 4:00 AM ET -- every day
+      # ScheduleExpression: 'rate(30 *  * * ? *)' ### Every 30 minutes
+
+      RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${EventBridgeExecutionRoleName}'    ### !!! ATTENTION !!! Remove/Replace the line
+
+      Targets: 
+        - Id: "RunningEC2StatusTriggersStepFn"
+          Arn: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${StepFuncName}'
+
+          RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${EventBridgeExecutionRoleName}'    ### !!! ATTENTION !!! Remove/Replace the line
+          ### Whether or NOT .. .. you have MULTIPLE/different TARGETs for this SINGLE RULE, and per AWS Principles, must use different IAM-Roles for each TARGET.
+
+          # InputPath: .. String .. ### IN CASE .. you do NOT want the ENTIRE event-JSON to be passed as-is (to the Target)
+          ### WARNING. Anything you put here will be the HARDCODED "input" that is sent to your TARGET!!!
+          Input: !Sub |
+            {
+                "SNSTopicName": "sandbox-DefaultAllPurposeNotifChannel",
+                "deleteInSequence": [
+                    "Role-EKS-AWSLoadBalancerController",
+
+                    { "deleteInParallel": [
+                        "EKS-Nodegroup-primary-sandbox",
+                        "EKS-Nodegroup-deprecated-primary-sandbox",
+                        "EKS-OIDCProvider-primary-sandbox"
+                    ]},
+
+                    "EKS-NodeLaunchTemplate-primary-sandbox",
+
+                    {
+                      "deleteInParallel": [
+                        "EKS-AllinOne-primary-sandbox",
+                        {
+                          "deleteInSequence": [
+                            "SG-EKS-k8s-EC2Node",
+                            "EKS-primary-sandbox"
+                          ]
+                        }
+                      ]
+                    },
+
+                    { "deleteInParallel": [
+                        "NATGW-EKS-PrivateSubnets-sandbox",
+                        "KMSKey-StdSymmetric",
+
+                        "C9-PrivateSubnet-SSMAccess-sarmaconsole-default",
+
+                        "IAM-OIDCProvider-primary-sandbox",
+
+                        "Role-EKS-ConnectorAgent",
+                        "Role-EKS-AWSLoadBalancerController",
+                        "Role-EKS-LamdaAdmin",
+                        "Role-EKS-NodeProfile",
+                        "Role-EKS-ClusterMgr",
+                        "Policy-EKS-ClusterAutoScaler"
+                    ]}
+                ]
+            }
+
+    ### Removed from JSON above - from the INNER "deleteInParallel" element.
+                        # "Role-EKS-LamdaAdmin",
+                        # "Role-EKS-NodeProfile",
+                        # "Role-EKS-ClusterMgr",
+
+          # InputTransformer:       ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-events-rule-inputtransformer.html
+          #   InputTransformer      ### Use this, to BUILD your own JSON utilizing values from Event's JSON.  Typically, to send to SNS for notifications.
+
+          # DeadLetterConfig: 
+          #   DeadLetterConfig
+          # RetryPolicy:      ### to use for the dead-letter queue ONLY.
+          #   RetryPolicy
+          # RunCommandParameters:     ### ONLY USED WHEN .. .. using this rule to invoke Amazon EC2 Run Command.
+          #   RunCommandParameters
+
+
+## EoF
