@@ -1,0 +1,24 @@
+
+{
+    "SNSTopicName": "sandbox-DefaultAllPurposeNotifChannel",
+
+    "deleteInSequence": [
+        { "deleteInParallel": [
+            "stepfunc1",
+            "stepfunc2",
+            "stepfunc3"
+        ]},
+
+        { "deleteInParallel": [
+            { "deleteInSequence": [ "SQSStackName", "Lambda1StackName" ]},
+            "Lambda2StackName",
+            "Lambda3StackName"
+        ]},
+
+        "Role-1",
+        "Role-1",
+        "Role-3"
+    ]
+}
+
+

@@ -1,0 +1,38 @@
+{
+    "SNSTopicName": "sandbox-DefaultAllPurposeNotifChannel",
+    "deleteInSequence": [
+
+        { "deleteInParallel": [
+            "EKS-Nodegroup-primary-sandbox",
+            "EKS-Nodegroup-deprecated-primary-sandbox",
+            "EKS-NodeLaunchTemplate-primary-sandbox",
+            "EKS-OIDCProvider-primary-sandbox"
+        ]},
+
+        { "deleteInParallel": [
+            "EKS-AllinOne-primary-sandbox",
+
+            { "deleteInSequence": [
+                 "SG-EKS-k8s-EC2Node",
+                 "EKS-primary-sandbox"
+            ]}
+        ]},
+
+        { "deleteInParallel": [
+            "NATGW-EKS-PrivateSubnets-sandbox",
+            "KMSKey-StdSymmetric",
+
+            "C9-PrivateSubnet-SSMAccess-sarmaconsole-default",
+
+            "IAM-OIDCProvider-primary-sandbox",
+
+            "Role-EKS-ConnectorAgent",
+            "Role-EKS-AWSLoadBalancerController",
+            "Policy-EKS-AWSLoadBalancerController",
+            "Role-EKS-LamdaAdmin",
+            "Role-EKS-NodeProfile",
+            "Role-EKS-ClusterMgr",
+            "Policy-EKS-ClusterAutoScaler"
+        ]}
+    ]
+}
