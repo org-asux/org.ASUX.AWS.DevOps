@@ -60,7 +60,7 @@ Resources:
           ### WARNING. Anything you put here will be the HARDCODED "input" that is sent to your TARGET!!!
           Input: !Sub |
             {
-                "SNSTopicName": "sandbox-DefaultAllPurposeNotifChannel",
+                "SNSTopicName": "${SNSTopicName}",
                 "deleteInSequence": [
                     "Role-EKS-AWSLoadBalancerController",
 
