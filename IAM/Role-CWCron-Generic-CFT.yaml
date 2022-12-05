@@ -1,0 +1,414 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
+  Make sure to create a new IAM-Role that follows the principle of least-access
+
+Parameters:
+
+  ENV:
+    Type: String
+
+  AppComponentId:
+    Description: >-
+      Added as SUFFIX to name of the _NEW_ IAMRole that is created.
+      Example: StepFuncExecution-{AppComponentId}
+    Type: String  ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#parameters-section-structure-properties-type
+
+  PermissionsBoundaryPolicyARN:
+    Type: String
+    AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):iam::\d+:policy\/[\w+=/:,.@-]{1,64}$'
+    # AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):(iam|sts)::\d+:(root|(user\/[\w+=/:,.@-]{1,64}|federated-user\/[\w+=/:,.@-]{2,32}|assumed-role\/[\w+=:,.@-]{1,64}\/[\w+=,.@-]{1,64}))$'
+
+  # AWSServiceName:
+    # Description: Example values are ec2.amazonaws.com, lambda.amazonaws.com .. The AWS-Service that needs appropriate access.
+    # Type: String  ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#parameters-section-structure-properties-type
+    # Default: 'lambda.amazonaws.com'
+    # # AllowedValues:
+    # #  - xyz
+
+  # managedPolicy1:
+    # Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    # Type: String
+
+  # managedPolicy2:
+    # Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    # Type: String
+
+  # managedPolicy3:
+    # Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    # Type: String
+
+
+### ================================================================
+### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+### ================================================================
+
+# DELETE THESE COMMENTED LINED - Resources:
+
+  # myRole3ManagedPolicies:  ### Make sure to match the 'RoleName' field below.
+
+  #   Type: 'AWS::IAM::Role'
+  #   Properties:
+  #     RoleName: myRole3ManagedPolicies    ### Make sure to match the CFT-ResourceName above.
+  #     # RoleName: !Ref myRoleName ### Variable NOT allowed !!!!!!!
+  #     Description: 3 Managed-Policies for a specific AWS-Service
+
+  #     ManagedPolicyArns:
+  #       - !Ref managedPolicy1
+  #       - !Ref managedPolicy2
+  #       - !Ref managedPolicy3
+
+  #     AssumeRolePolicyDocument:
+  #       Version: "2012-10-17"
+  #       Statement:
+  #         - Sid: "StsAssumeRole"
+  #           Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - !Ref AWSServiceName
+  #           Action:
+  #             - 'sts:AssumeRole'
+
+### ================================================================
+### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+### ================================================================
+
+
+Mappings:
+
+  Environments: 
+    sandbox:
+      ReplicaRegion: "us-east-2"
+      # ReplicaRegion: "us-west-2"
+      SharedDevOpsS3Bucket: "generic-bucket-" ### Suffix this with ${AWS::AccountId} !!!
+
+  sandbox:
+
+    us-east-2:
+      VPCID: vpc-0ccb3964
+      AZ1: us-east-2a
+      AZ2: us-east-2b
+      AZ3: us-east-2c
+      ### Public subnets
+      AZ1PublicSubnet1: subnet-8f2febe7           ### 2a
+      AZ22PublicSubnet1: subnet-fdac9486           ### 2b
+      AZ333PublicSubnet1: subnet-c08af38d           ### 2c
+      ### _PRIVATE_ subnets
+      AZ1PrivateSubnet1: subnet-02e786bf96d98616a ### 2a
+      AZ22PrivateSubnet1: subnet-0bf6e4b3be5db638e ### 2b
+
+    us-west-2:
+      VPCID: vpc-030d996c578e9c81d      ### Non-CloudBoost Default-VPC = vpc-0f46a06bc3d3109b3
+      AZ1: us-west-2a
+      AZ2: us-west-2b
+      AZ3: us-west-2c
+      ### Public subnets
+      AZ1PublicSubnet1: subnet-01402c2e8dbf238ff  ### 2a Cloudboost-created
+      AZ22PublicSubnet1: subnet-07bf78999110ac80f  ### 2b Cloudboost-created
+      # AZ1PublicSubnet1: subnet-058acd86ebddc0a80  ## 2a Default
+      # AZ22PublicSubnet1: subnet-007b1b862393eff19  ## 2b Default
+      # AZ333PublicSubnet1: subnet-089d060fe13dd00f7  ## 2c Default
+      ### _PRIVATE_ subnets
+      AZ1PrivateSubnet1: subnet-0af56044ea28995c5  ### 2a Cloudboost-created
+      AZ22PrivateSubnet1: subnet-0d5aaaab5e5ca138c  ### 2b Cloudboost-created
+
+
+### ================================================================
+### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+### ================================================================
+
+Resources:
+
+  GenericIAMRoleToAllowCWCronToInteractWithAnyAWSService:
+
+    Type: 'AWS::IAM::Role'    ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+    Properties:
+      Path: /
+
+      # RoleName: !Sub '${ProjectId}-CWCron-${AppComponentId}-${UserId}-${ENV}'
+      RoleName: !Sub 'CWCron-${AppComponentId}'
+      PermissionsBoundary: !Ref PermissionsBoundaryPolicyARN
+      Description: >-
+        This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
+        Make sure to create a new IAM-Role that follows the principle of least-access
+
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "StsAssumeRole"
+            Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+      ManagedPolicyArns:
+        ### Provide a List of AWS Policies that you want to ATTACH to this role
+        - 'arn:aws:iam::aws:policy/CloudWatchEventsFullAccess' ### NOTE: Without this you'll get the error "Resource handler returned message: 'arn:aws:iam::685419346405:role/StepFunctionExecution-Generic' is not authorized to create managed-rule"
+        ### Following POLICY added per: https://docs.aws.amazon.com/xray/latest/devguide/security_iam_service-with-iam.html
+        # - 'arn:aws:iam::aws:policy/AWSXrayFullAccess'
+
+      Policies:
+
+        # - PolicyName: !Sub '${ProjectId}-CWCron-${AppComponentId}-${UserId}-${ENV}'
+        - PolicyName: !Sub 'CWCron-${AppComponentId}'
+
+          # Description: >-
+          #   This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
+          #   Make sure to create a new IAM-Role that follows the principle of least-access
+
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+
+            - Sid: 'CloudWatchLogsWritePermissions'
+              Effect: Allow
+              Action:
+                - 'logs:DescribeLogGroups'
+                - 'logs:DescribeLogStreams'
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+                - 'logs:PutMetricFilter'
+                - 'logs:CreateLogDelivery'
+                  ###  ATTN: The following are REQUIRED per StepFunction-documentation at https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html#cloudwatch-iam-policy
+                - 'logs:GetLogDelivery'
+                - 'logs:UpdateLogDelivery'
+                - 'logs:DeleteLogDelivery'
+                - 'logs:ListLogDeliveries'
+                - 'logs:PutResourcePolicy'
+                - 'logs:DescribeResourcePolicies'
+                # - 'logs:Remove*'  ### No such Action
+              Resource:
+                - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+
+            - Sid: 'KMSAll' ### Needed to access encrypted SSM-Parameters and of course ANY Secret
+              Effect: Allow
+              Action:
+                # - 'kms:*'
+                - 'kms:Decrypt'
+              Resource:
+                - !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*'
+
+            - Sid: 'IAMPermission'
+              Effect: Allow
+              Action:
+                - 'iam:get*'
+                - 'iam:PassRole' ### Attention: WARNING: This is MANDATORY to allow DMS to write to CW-Logs
+                - 'iam:Describe*'
+                - 'iam:Get*'
+                - 'iam:Delete*'
+                - 'iam:Remove*'
+              Resource:
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:*'
+
+            - Sid: 'SSMParameterPermission'
+              Effect: Allow
+              Action:
+                # - 'ssm:GetParameter'
+                - 'ssm:PutParameter'
+                - 'ssm:Get*'
+                - 'ssm:Delete*'
+                - 'ssm:Remove*'   ### RemoveTags only?
+              Resource:
+                - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:*'
+
+            - Sid: 'S3LimitedAccess'
+              Effect: Allow
+              Action:
+                ## https://docs.aws.amazon.com/AmazonS3/latest/userguide/list_amazons3.html
+                - 's3:*'
+                # - 's3:ListBucket' # includes ListObjects
+                # # - 's3:ListBuckets' ## DOES _NOT_ exist.
+                # # - 's3:ListObjects' ## DOES _NOT_ exist.
+                # - 's3:ListBucketVersions'
+                # # - 's3:ListObjectVersions' ## DOES _NOT_ exist.
+                # - 's3:GetObject'
+                # - 's3:GetObjectAcl'
+                # - 's3:GetObjectVersionAcl'
+                # - 's3:GetObjectVersionTagging'
+                # - 's3:PutObject'
+                # - 's3:PutObjectAcl'
+                # - 's3:PutObjectTagging'
+                # - 's3:PutObjectVersionAcl'
+                # - 's3:PutObjectVersionTagging'
+                # - 's3:PutObjectRetention'
+                # - 's3:GetBucketNotification'
+                # - 's3:PutBucketNotification'
+                # # - 's3:PutBucketNotificationConfiguration' ## DOES _NOT_ exist.
+                # # - 's3:CreateMultipartUpload' ## DOES _NOT_ exist.
+                # # - 's3:UploadPart' ## DOES _NOT_ exist.
+                # # - 's3:UploadPartCopy' ## DOES _NOT_ exist.
+                # # - 's3:CompleteMultipartUpload' ## DOES _NOT_ exist.
+                # # - 's3:ListMultipartUploads' ## DOES _NOT_ exist.
+                # - 's3:ListBucketMultipartUploads'
+                # - 's3:ListMultipartUploadParts'
+                # - 's3:AbortMultipartUpload'
+                # # - 's3:CopyObject' ## DOES _NOT_ exist.
+                # # - 's3:HeadBucket' ## DOES _NOT_ exist.
+                # # - 's3:HeadObject' ## DOES _NOT_ exist.
+                # # - 's3:GetObjectLockConfiguration' ## DOES _NOT_ exist.
+                # - 's3:DeleteObject'
+                # - 's3:DeleteObjectVersion'
+                # - 's3:DeleteObjectVersionTagging'
+                # # - 's3:DeleteObjects' ## DOES _NOT_ exist.
+              Resource:
+                - !Sub  ['arn:aws:s3:::${SharedDevOpsS3Bucket}${AWS::AccountId}',   {SharedDevOpsS3Bucket: !FindInMap ['Environments', !Ref 'ENV', 'SharedDevOpsS3Bucket']}]
+                - !Sub  ['arn:aws:s3:::${SharedDevOpsS3Bucket}${AWS::AccountId}/*', {SharedDevOpsS3Bucket: !FindInMap ['Environments', !Ref 'ENV', 'SharedDevOpsS3Bucket']}]
+                        ### This line will lead to the expression '/*' (which will IGNORE topmost-level objects)
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awssecretsmanager.html
+            - Sid: accessSecrets
+              Effect: Allow
+              Action:
+                  - 'secretsmanager:Get*'
+                  - 'secretsmanager:Delete*'
+                  - 'secretsmanager:RemoveRegionsFromReplication'
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*"
+
+            - Sid: 'SQSPermission'
+              Effect: Allow
+              Action:
+                - 'sqs:*'
+              Resource:
+                - '*'
+
+            - Sid: 'SNSPermission'
+              Effect: Allow
+              Action:
+                - 'sns:*'
+              Resource:
+                - '*'
+                # - !Ref SNSTopicSuccessARN
+                # - !Ref SNSTopicFailureARN
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscodebuild.html
+            - Sid: 'CodeBuildFullPermissions'
+              Effect: Allow
+              Action:
+                - 'codebuild:List*'
+                - 'codebuild:Delete*'
+                # - 'codebuild:Remove*'   ### No such thing???
+                - 'codebuild:*'
+                # - 'codebuild:StartBuild'
+                # - 'codebuild:StopBuild'
+                # - 'codebuild:BatchGet*'
+                # - 'codebuild:GetResourcePolicy'
+                # - 'codebuild:DescribeTestCases'
+                # - 'codebuild:List*'
+              Resource:
+                - '*'
+
+            - Sid: 'RDSPermission'
+              Effect: Allow
+              Action:
+                - 'rds:*'
+              Resource:
+                - '*'
+
+            - Sid: 'BeanStalkPermission'
+              Effect: Allow
+              Action:
+                - 'elasticbeanstalk:*'
+              Resource:
+                - '*'
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awslambda.html
+            - Sid: 'LambdaFullAccess'
+              Effect: Allow
+              Action:
+                - 'lambda:*'  ### Invoke other Lambdas, that get triggered when deleting ANYTHING on AWS.
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:*'
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_elasticloadbalancingv2.html
+            - Sid: 'ELBFullAccess'
+              Effect: Allow
+              Action:
+                - 'elasticloadbalancing:Delete*'
+                - 'elasticloadbalancing:Deregister*'
+                - 'elasticloadbalancing:Describe*'
+                - 'elasticloadbalancing:RemoveTags'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:*'
+                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/*'
+                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:listener/*'
+                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:listener-rule/*'
+                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:loadbalancer/*'
+
+            - Sid: 'EKSFullAccess'
+              Effect: Allow
+              Action:
+                - 'eks:*'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:eks:${AWS::Region}:${AWS::AccountId}:*'
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsautoscaling.html
+            - Sid: 'AutoScalingFullAccess'
+              Effect: Allow
+              Action:
+                - 'autoscaling:Describe*'
+                - 'autoscaling:Delete*'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:*'
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsstepfunctions.html
+            - Sid: 'StepFunctionFullAccess'
+              Effect: Allow
+              Action:
+                - 'states:*'    ### !! ATTN !! invoking other StepFunctions, monitoring them, etc.. .. everything is in scope!
+                # - 'states:StartExecution'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:*'
+                # - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*'
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsdatabasemigrationservice.html
+            - Sid: 'AWSDMSPermission'
+              Effect: Allow
+              Action:
+              - 'dms:*'
+              Resource:
+              - '*'
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonec2.html
+            - Sid: 'SomeHackerIsGoingToTakeAdvantage'
+              Effect: Allow
+              Action:
+                - 'ec2:AuthorizeSecurityGroupEgress'    ### When UN-deploying a SG-line-item (for an SG owned by other Stacks)
+                - 'ec2:Delete*'
+                - 'ec2:Describe*'
+                - 'ec2:Get*'
+                - 'ec2:Release*'  ### ReleaseHosts ReleaseAddress
+                - 'ec2:Reset*'
+                - 'ec2:Revoke*'
+                - 'ec2:Untag*'
+              Resource:
+                - '*'
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscloud9.html
+            - Sid: 'Cloud9FullAccess'
+              Effect: Allow
+              Action:
+                - 'cloud9:Get*'
+                - 'cloud9:List*'
+                - 'cloud9:Delete*'
+                - 'cloud9:Describe*'
+                - 'cloud9:Untag*'
+              Resource:
+                - '*'
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscloudformation.html
+            - Sid: 'CloudFormationStackAutomation'
+              Effect: Allow
+              Action:
+                - 'cloudformation:*'
+              Resource:
+                - '*'
+
