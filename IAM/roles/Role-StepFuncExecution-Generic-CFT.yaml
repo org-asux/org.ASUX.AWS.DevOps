@@ -163,20 +163,29 @@ Resources:
                 #     - 'log-group:*'
                 #     # - 'log-group:/aws/lambda/*'
 
-            - Sid: 'IAMPermissionForRolesMgmtOnly'
+            - Sid: 'IAMPermissionsRestriction'
               Effect: Allow
+### !!! ATTENTION !!! NotAction 
+### !!! ATTENTION !!! NotAction 
+### !!! ATTENTION !!! NotAction 
+### !!! ATTENTION !!! NotAction 
+### !!! ATTENTION !!! NotAction 
               NotAction:
-                # - 'iam:PassRole' ### Attention: WARNING: This is MANDATORY to allow DMS to write to CW-Logs
-                - 'iam:*'
-                # - 'iam:get*'
+### !!! ATTENTION !!! NotAction 
+### !!! ATTENTION !!! NotAction 
+### !!! ATTENTION !!! NotAction 
+### !!! ATTENTION !!! NotAction 
+### !!! ATTENTION !!! NotAction 
+                - 'iam:PassRole' ### !! Attention !! WARNING !! This is MANDATORY to allow DMS to write to CW-Logs
               Resource:
                 - !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
-                # - !Join
-                #   - ':'
-                #   - - 'arn:aws:iam'
-                #     - '' ### Cannot specify region in IAM ARNs.
-                #     - !Ref AWS::AccountId
-                #     - 'role/*'
+
+            - Sid: 'IAMPermissionForRolesMgmtOnly'
+              Effect: Allow
+              Action:
+                - 'iam:*' ### !! ATTENTION !! WARNING !! this is combined with the above _NOTACTION_ !!
+              Resource:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
 
               ### When creating EKS clusters, a special Role called "eksNodeProfileRole" is automatically associated with Node/EC2-Profiles.
               ### When using StepFunctions to "CASCASE DELETE" multiple stacks, we need this one special permission (to delete that Role).
@@ -186,7 +195,7 @@ Resources:
                 - 'iam:RemoveRoleFromInstanceProfile'
                 - 'iam:DeleteInstanceProfile'
               Resource:
-                - '*'
+                - !Sub "arn:aws:iam::${AWS::AccountId}:instance-profile/*"
 
             - Sid: 'KMSAll' ### Needed to access encrypted SSM-Parameters and of course ANY Secret
               Effect: Allow
