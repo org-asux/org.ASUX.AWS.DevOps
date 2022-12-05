@@ -125,29 +125,41 @@ Resources:
                   ###  ATTN: "*" is REQUIRED per StepFunction-documentation at https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html#cloudwatch-iam-policy
                 - '*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_identityandaccessmanagement.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_identityandaccessmanagement.html
             - Sid: 'IAMPermissionForRolesMgmtOnly'
               Effect: Allow
-              NotAction:
+              Action:
                 - 'iam:Describe*'
                 - 'iam:Get*'
                 - 'iam:Delete*'
                 - 'iam:Remove*'
+                - 'iam:Detach*'   ### iam:DetachRolePolicy
               Resource:
-                - !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
-                - !Sub "arn:aws:iam::${AWS::AccountId}:user/*"
-                - !Sub "arn:aws:iam::${AWS::AccountId}:instance-profile/*"    ### EC2 instanceProfiles
+                - !Sub "arn:aws:iam::${AWS::AccountId}:*"
+                # - !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
+                # - !Sub "arn:aws:iam::${AWS::AccountId}:user/*"
+                # - !Sub "arn:aws:iam::${AWS::AccountId}:instance-profile/*"    ### EC2 instanceProfiles
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awskeymanagementservice.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awskeymanagementservice.html
             - Sid: 'KMSAll' ### Needed to access encrypted SSM-Parameters and of course ANY Secret
               Effect: Allow
               Action:
                 - 'kms:Delete*'  ### some activities within StepFunctions REQUIRE a LOT of access-rights!!!!
+                - 'kms:Decrypt*'
+                - 'kms:DescribeKey' ### StepFn needed this to DELETE Key (to look up Aliases)
+                - 'kms:ScheduleKeyDeletion*'
                 # - 'kms:Remove*' ### No such Action.
               Resource:
                 - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*"
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awssecretsmanager.html
+            - Sid: 'KMSAlias' ### Needed to access encrypted SSM-Parameters and of course ANY Secret
+              Effect: Allow
+              Action:
+                - 'kms:DeleteAlias'
+              Resource:
+                - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/*"
+
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awssecretsmanager.html
             - Sid: accessSecrets
               Effect: Allow
               Action:
@@ -157,7 +169,7 @@ Resources:
               Resource:
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*"
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awssystemsmanager.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awssystemsmanager.html
             - Sid: 'SSMParameterPermission'
               Effect: Allow
               Action:
@@ -184,7 +196,7 @@ Resources:
                 - !Sub [ "arn:aws:s3:::${BKTPREFIX}${AWS::AccountId}",   { "BKTPREFIX": !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] } ]
                 - !Sub [ "arn:aws:s3:::${BKTPREFIX}${AWS::AccountId}/*", { "BKTPREFIX": !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] } ]
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsqs.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsqs.html
             - Sid: 'SQSPermission'
               Effect: Allow
               Action:
@@ -194,7 +206,7 @@ Resources:
                 # - '*'
                 - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:*"
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsns.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonsns.html
             - Sid: 'SNSPermission'
               Effect: Allow
               Action:
@@ -204,7 +216,7 @@ Resources:
               Resource:
                 - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscodebuild.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscodebuild.html
             - Sid: 'CodeBuildFullPermissions'
               Effect: Allow
               Action:
@@ -214,7 +226,7 @@ Resources:
               Resource:
                 - '*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonrds.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonrds.html
             - Sid: 'RDSFullAccess'
               Effect: Allow
               Action:
@@ -223,7 +235,7 @@ Resources:
               Resource:
                 - '*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awselasticbeanstalk.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awselasticbeanstalk.html
             - Sid: 'BeanStalkFullAccess'
               Effect: Allow
               Action:
@@ -236,7 +248,7 @@ Resources:
               Resource:
                 - '*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awslambda.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awslambda.html
             - Sid: 'LambdaFullAccess'
               Effect: Allow
               Action:
@@ -245,7 +257,7 @@ Resources:
                 # - '*'
                 - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_elasticloadbalancingv2.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_elasticloadbalancingv2.html
             - Sid: 'ELBFullAccess'
               Effect: Allow
               Action:
@@ -269,7 +281,7 @@ Resources:
                 # - '*'
                 - !Sub 'arn:aws:eks:${AWS::Region}:${AWS::AccountId}:*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsautoscaling.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsautoscaling.html
             - Sid: 'AutoScalingFullAccess'
               Effect: Allow
               Action:
@@ -279,16 +291,17 @@ Resources:
                 # - '*'
                 - !Sub 'arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsstepfunctions.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsstepfunctions.html
             - Sid: 'StepFunctionFullAccess'
               Effect: Allow
               Action:
                 - 'states:*'    ### !! ATTN !! invoking other StepFunctions, monitoring them, etc.. .. everything is in scope!
               Resource:
                 # - '*'
-                - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*'
+                - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:*'
+                # - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsdatabasemigrationservice.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsdatabasemigrationservice.html
             - Sid: 'AWSDMSPermission'
               Effect: Allow
               Action:
@@ -299,7 +312,7 @@ Resources:
                 # - '*'
                 - !Sub 'arn:aws:dms:${AWS::Region}:${AWS::AccountId}:*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonec2.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonec2.html
             - Sid: 'SomeHackerIsGoingToTakeAdvantage'
               Effect: Allow
               Action:
@@ -314,7 +327,7 @@ Resources:
               Resource:
                 - '*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscloud9.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscloud9.html
             - Sid: 'Cloud9FullAccess'
               Effect: Allow
               Action:
@@ -326,7 +339,7 @@ Resources:
               Resource:
                 - '*'
 
-              ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscloudformation.html
+            ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscloudformation.html
             - Sid: 'CloudFormationStackAutomation'
               Effect: Allow
               Action:
