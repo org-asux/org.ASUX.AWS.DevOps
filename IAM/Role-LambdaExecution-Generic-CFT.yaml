@@ -1,0 +1,424 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
+  Make sure to create a new IAM-Role that follows the principle of least-access
+
+Parameters:
+
+  ENV:
+    Type: String
+
+  AppComponentId:
+    Description: >-
+      Added as SUFFIX to name of the _NEW_ IAMRole that is created.
+      Example: StepFuncExecution-{AppComponentId}
+    Type: String  ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#parameters-section-structure-properties-type
+
+  PermissionsBoundaryPolicyARN:
+    Type: String
+    AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):iam::\d+:policy\/[\w+=/:,.@-]{1,64}$'
+    # AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):(iam|sts)::\d+:(root|(user\/[\w+=/:,.@-]{1,64}|federated-user\/[\w+=/:,.@-]{2,32}|assumed-role\/[\w+=:,.@-]{1,64}\/[\w+=,.@-]{1,64}))$'
+
+  managedPolicy1:
+    Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    Type: String
+
+  managedPolicy2:
+    Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    Type: String
+
+  managedPolicy3:
+    Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    Type: String
+
+# DELETE THESE COMMENTED LINED - Resources:
+
+#   myRole3ManagedPolicies:  ### Make sure to match the 'RoleName' field below.
+
+#     Type: 'AWS::IAM::Role'
+#     Properties:
+#       RoleName: myRole3ManagedPolicies    ### Make sure to match the CFT-ResourceName above.
+#       # RoleName: !Ref myRoleName ### Variable NOT allowed !!!!!!!
+#       Description: 3 Managed-Policies for a specific AWS-Service
+
+#       ManagedPolicyArns:
+#         - !Ref managedPolicy1
+#         - !Ref managedPolicy2
+#         - !Ref managedPolicy3
+
+#       AssumeRolePolicyDocument:
+#         Version: "2012-10-17"
+#         Statement:
+#           - Sid: "StsAssumeRole"
+#             Effect: Allow
+#             Principal:
+#               Service:
+#                 - !Ref AWSServiceName
+#             Action:
+#               - 'sts:AssumeRole'
+
+### ================================================================
+### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+### ================================================================
+
+Mappings:
+
+  Config:
+    Prefix:
+      Value: 'eks-quickstart'
+
+  ### ================================================================
+
+  Environments: 
+    sandbox:
+      ReplicaRegion: "us-east-2"
+      # ReplicaRegion: "us-west-2"
+      SharedDevOpsS3Bucket: "generic-bucket-" ### Suffix this with ${AWS::AccountId} !!!
+
+      kubeApiPort: "6432"
+
+  sandbox:
+
+    us-east-2:
+      VPCID: vpc-0ccb3964
+      AZ1: us-east-2a
+      AZ2: us-east-2b
+      AZ3: us-east-2c
+      ### Public subnets
+      AZ1PublicSubnet1: subnet-8f2febe7           ### 2a
+      AZ22PublicSubnet1: subnet-fdac9486           ### 2b
+      AZ333PublicSubnet1: subnet-c08af38d           ### 2c
+      ### _PRIVATE_ subnets
+      AZ1PrivateSubnet1: subnet-02e786bf96d98616a ### 2a
+      AZ22PrivateSubnet1: subnet-0bf6e4b3be5db638e ### 2b
+
+    us-west-2:
+      VPCID: vpc-030d996c578e9c81d      ### Non-CloudBoost Default-VPC = vpc-0f46a06bc3d3109b3
+      AZ1: us-west-2a
+      AZ2: us-west-2b
+      AZ3: us-west-2c
+      ### Public subnets
+      AZ1PublicSubnet1: subnet-01402c2e8dbf238ff  ### 2a Cloudboost-created
+      AZ22PublicSubnet1: subnet-07bf78999110ac80f  ### 2b Cloudboost-created
+      # AZ1PublicSubnet1: subnet-058acd86ebddc0a80  ## 2a Default
+      # AZ22PublicSubnet1: subnet-007b1b862393eff19  ## 2b Default
+      # AZ333PublicSubnet1: subnet-089d060fe13dd00f7  ## 2c Default
+      ### _PRIVATE_ subnets
+      AZ1PrivateSubnet1: subnet-0af56044ea28995c5  ### 2a Cloudboost-created
+      AZ22PrivateSubnet1: subnet-0d5aaaab5e5ca138c  ### 2b Cloudboost-created
+
+### =============================================================================
+### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+### =============================================================================
+
+Conditions:
+
+  existsManagedPolicyCFTParam1: !Not [ !Equals [ !Ref managedPolicy1, "" ]]
+  existsManagedPolicyCFTParam2: !Not [ !Equals [ !Ref managedPolicy2, "" ]]
+  existsManagedPolicyCFTParam3: !Not [ !Equals [ !Ref managedPolicy3, "" ]]
+
+### =============================================================================
+### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+### =============================================================================
+
+Resources:
+
+  LambdaIAMRole:
+
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: /
+      RoleName: !Sub "LambdaExecution-${AppComponentId}"
+      # RoleName: !Sub "LambdaExecution-${AppComponentId}-${UserId}-${ENV}"
+          # Use this to create a TEMPORARY variation of this IAM-Role just for your TEMPORARY needs
+      Description: >-
+        This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
+        Make sure to create a new IAM-Role that follows the principle of least-access
+
+      PermissionsBoundary: !Ref PermissionsBoundaryPolicyARN
+
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "StsAssumeRole"
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+
+      ManagedPolicyArns:
+        ### Provide a List of AWS Policies that you want to ATTACH to this role
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+        ### Following POLICY added per: https://docs.aws.amazon.com/xray/latest/devguide/security_iam_service-with-iam.html
+        - 'arn:aws:iam::aws:policy/AWSXrayFullAccess'
+        - !If [ existsManagedPolicyCFTParam1, !Ref managedPolicy1, !Ref AWS::NoValue ]
+        - !If [ existsManagedPolicyCFTParam2, !Ref managedPolicy2, !Ref AWS::NoValue ]
+        - !If [ existsManagedPolicyCFTParam3, !Ref managedPolicy3, !Ref AWS::NoValue ]
+
+      Policies:
+        - PolicyName: !Join
+            - '-'
+            # - - !Ref ProjectId #### !!! ATTENTION !!! Uncomment this to create a TEMPORARY variation of this IAM-Role just for your TEMPORARY needs
+            - - 'LambdaExecution'
+              - !Ref AppComponentId
+              # - !Ref UserId #### !!! ATTENTION !!! Uncomment this to create a TEMPORARY variation of this IAM-Role just for your TEMPORARY needs
+              # - !Ref ENV
+          # Description: >-
+          #   This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
+          #   Make sure to create a new IAM-Role that follows the principle of least-access
+
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+
+            - Sid: 'CloudWatchLogsWritePermissions'
+              Effect: Allow
+              Action:
+                - 'logs:DescribeLogGroups'
+                - 'logs:DescribeLogStreams'
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+                - 'logs:PutMetricFilter'
+              Resource:
+                - !Join
+                    - ':'
+                    - - 'arn:aws:logs'
+                      - !Ref AWS::Region
+                      - !Ref AWS::AccountId
+                      # - !FindInMap
+                      #   - "Environments"
+                      #   - !Ref "ENV"
+                      #   - "AccountNumber"
+                      - 'log-group:/aws/lambda/*'
+
+            - Sid: 'KMSAll' ### Needed to access encrypted SSM-Parameters
+              Effect: Allow
+              Action:
+                # - 'kms:*'
+                - 'kms:Decrypt'
+                - 'kms:GenerateDataKey*'
+              Resource:
+                # - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+                - !Join
+                  - ':'
+                  - - 'arn:aws:kms'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - 'key/*'
+
+            - Sid: readSecrets
+              Effect: Allow
+              Action:
+                  - "secretsmanager:GetSecretValue"
+                  - "secretsmanager:DescribeSecret"
+                  - "secretsmanager:GetResourcePolicy"
+                  - "secretsmanager:ListSecretVersionIds"
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*"
+                # - !Join
+                #   - ':'
+                #   - - 'arn:aws:secretsmanager'
+                #     - !Ref AWS::Region
+                #     - !Ref AWS::AccountId
+                #     - 'secret'
+                #     - '*'
+
+            - Sid: 'SSMParameterPermission'
+              Effect: Allow
+              Action:
+                - 'ssm:GetParameter'
+                - 'ssm:PutParameter'
+              Resource:
+                - !Join
+                  - ':'
+                  - - 'arn:aws:ssm'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - '*'
+
+            - Sid: 'S3LimitedAccess'
+              Effect: Allow
+              Action:
+                ## https://docs.aws.amazon.com/AmazonS3/latest/userguide/list_amazons3.html
+                # - 's3:*'
+                - 's3:ListBucket' # includes ListObjects
+                # - 's3:ListBuckets' ## DOES _NOT_ exist.
+                # - 's3:ListObjects' ## DOES _NOT_ exist.
+                - 's3:ListBucketVersions'
+                # - 's3:ListObjectVersions' ## DOES _NOT_ exist.
+                - 's3:GetObject'
+                - 's3:GetObjectAcl'
+                - 's3:getObjectVersion'
+                - 's3:GetObjectVersionAcl'
+                - 's3:GetObjectVersionTagging'
+                - 's3:PutObject'
+                - 's3:PutObjectAcl'
+                - 's3:PutObjectTagging'
+                - 's3:PutObjectVersionAcl'
+                - 's3:PutObjectVersionTagging'
+                - 's3:PutObjectRetention'
+                - 's3:GetBucketNotification'
+                - 's3:PutBucketNotification'
+                # - 's3:PutBucketNotificationConfiguration' ## DOES _NOT_ exist.
+                # - 's3:CreateMultipartUpload' ## DOES _NOT_ exist.
+                # - 's3:UploadPart' ## DOES _NOT_ exist.
+                # - 's3:UploadPartCopy' ## DOES _NOT_ exist.
+                # - 's3:CompleteMultipartUpload' ## DOES _NOT_ exist.
+                # - 's3:ListMultipartUploads' ## DOES _NOT_ exist.
+                - 's3:ListBucketMultipartUploads'
+                - 's3:ListMultipartUploadParts'
+                - 's3:AbortMultipartUpload'
+                # - 's3:CopyObject' ## DOES _NOT_ exist.
+                # - 's3:HeadBucket' ## DOES _NOT_ exist.
+                # - 's3:HeadObject' ## DOES _NOT_ exist.
+                # - 's3:GetObjectLockConfiguration' ## DOES _NOT_ exist.
+                - 's3:DeleteObject'
+                - 's3:DeleteObjectVersion'
+                - 's3:DeleteObjectVersionTagging'
+                # - 's3:DeleteObjects' ## DOES _NOT_ exist.
+              Resource:
+                - !Join
+                  - '/'
+                  - - !Join
+                        - ':'
+                        - - 'arn:aws:s3'
+                          - '' ## cannot contain Any Region
+                          - '' ## cannot contain Any Region AWS::AccountId
+                          - !FindInMap
+                            - Environments
+                            - !Ref 'ENV'
+                            - SharedDevOpsS3Bucket
+                    - '*' ### This line will lead to the expression '/*' (which will IGNORE topmost-level objects)
+
+            - Sid: 'SQSPermission'
+              Effect: Allow
+              Action:
+                - 'sqs:*'
+              Resource:
+                - '*'
+
+            - Sid: 'SNSPermission'
+              Effect: Allow
+              Action:
+                - 'sns:*'
+              Resource:
+                # - '*'
+                # - !Ref SNSTopicSuccessARN
+                # - !Ref SNSTopicFailureARN
+                - !Join
+                  - ':'
+                  - - 'arn:aws:sns'
+                    - !Ref AWS::Region
+                    - !Ref AWS::AccountId
+                    - '*'
+
+            - Sid: 'CodeBuildFullPermissions'
+              Effect: Allow
+              Action:
+                - 'codebuild:*'
+                # - 'codebuild:StartBuild'
+                # - 'codebuild:StopBuild'
+                # - 'codebuild:BatchGet*'
+                # - 'codebuild:GetResourcePolicy'
+                # - 'codebuild:DescribeTestCases'
+                # - 'codebuild:List*'
+              Resource:
+                - '*'
+
+            - Sid: 'RDSFullAccess'
+              Effect: Allow
+              Action:
+                - 'rds:*'
+              Resource:
+                - '*'
+
+            - Sid: 'BeanStalkFullAccess'
+              Effect: Allow
+              Action:
+                - 'elasticbeanstalk:*'
+              Resource:
+                - '*'
+
+            - Sid: 'LambdaFullAccess'
+              Effect: Allow
+              Action:
+                - 'lambda:*'
+                # - 'lambda:InvokeFunction'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:*'
+
+            - Sid: 'ELBFullAccess'
+              Effect: Allow
+              Action:
+                - 'elasticloadbalancing:*'
+              Resource:
+                ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_elasticloadbalancingv2.html
+                # - '*'
+                - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:*'
+                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/*'
+                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:listener/*'
+                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:listener-rule/*'
+                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:loadbalancer/*'
+
+            - Sid: 'EKSFullAccess'
+              Effect: Allow
+              Action:
+                - 'eks:*'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:eks:${AWS::Region}:${AWS::AccountId}:*'
+
+            - Sid: 'AutoScalingFullAccess'
+              Effect: Allow
+              Action:
+                - 'autoscaling:*'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:*'
+
+            - Sid: 'StepFunctionFullAccess'
+              Effect: Allow
+              Action:
+                - 'states:*'
+                # - 'states:StartExecution'
+                # - 'states:StartSyncExecution'
+                # - 'states:StopExecution'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*'
+
+            - Sid: 'AWSDMSPermission'
+              Effect: Allow
+              Action:
+                - 'dms:*'
+              Resource:
+                # - '*'
+                - !Sub 'arn:aws:dms:${AWS::Region}:${AWS::AccountId}:*'
+
+            - Sid: 'SomeHackerIsGoingToTakeAdvantage'
+              Action:
+                - 'ec2:*'
+              Resource:
+                - '*'
+              Effect: Allow
+
+            - Sid: 'Cloud9IDEFullAccess'
+              Action:
+                - 'cloud9:*'
+              Resource:
+                - '*'
+              Effect: Allow
+
+            - Sid: 'CloudFormationStackAutomation'
+              Action:
+                - 'cloudformation:*'
+                # - 'cloudformation:DeleteStack'
+              Resource:
+                - '*'
+              Effect: Allow
+
+### EoF
