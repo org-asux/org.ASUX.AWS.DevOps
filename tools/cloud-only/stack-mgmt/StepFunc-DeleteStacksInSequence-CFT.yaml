@@ -176,6 +176,9 @@ Resources:
                     },
                     { "Variable": "$.StackDetails.StackDetails.StackStatus",
                       "StringEquals": "ROLLBACK_IN_PROGRESS"
+                    },
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS"
                     }
                   ],
                   "Next": "Wait between STATUS-CHECKS for Stack-Delete"
@@ -183,6 +186,12 @@ Resources:
                 {
                   "Comment": "completed",
                   "Or": [
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "ROLLBACK_COMPLETE"
+                    },
+                    { "Variable": "$.StackDetails.StackDetails.StackStatus",
+                      "StringEquals": "UPDATE_ROLLBACK_COMPLETE"
+                    },
                     { "Variable": "$.StackDetails.StackDetails.StackStatus",
                       "StringEquals": "ROLLBACK_COMPLETE"
                     },

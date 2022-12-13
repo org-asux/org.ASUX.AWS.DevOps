@@ -6,6 +6,44 @@ The frustration is that I have to wait and wait and wait .. , as I am forced to 
 
 I hope this tool feels VERY EASY AND VERY SIMPLE to use, just like my experience.
 
+## Cloudformation Statuses
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
+
+Cloudformation Stack Completion or Failure or in-progress State Status
+
+```
+CREATE_IN_PROGRESS
+CREATE_COMPLETE
+
+DELETE_IN_PROGRESS
+DELETE_COMPLETE
+
+UPDATE_IN_PROGRESS
+UPDATE_COMPLETE
+UPDATE_COMPLETE_CLEANUP_IN_PROGRESS
+UPDATE_ROLLBACK_COMPLETE
+UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS
+UPDATE_ROLLBACK_IN_PROGRESS
+
+ROLLBACK_COMPLETE
+ROLLBACK_IN_PROGRESS
+
+REVIEW_IN_PROGRESS
+
+CREATE_FAILED
+DELETE_FAILED
+ROLLBACK_FAILED
+UPDATE_FAILED
+UPDATE_ROLLBACK_FAILED
+IMPORT_ROLLBACK_FAILED
+
+IMPORT_IN_PROGRESS
+IMPORT_COMPLETE
+IMPORT_ROLLBACK_IN_PROGRESS
+IMPORT_ROLLBACK_COMPLETE
+```
+
 # Tool - Install
 
 FYI: The tool is a PAIR of StepFunctions.

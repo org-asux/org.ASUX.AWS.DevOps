@@ -151,6 +151,9 @@ Resources:
                           },
                           { "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "ROLLBACK_IN_PROGRESS"
+                          },
+                          { "Variable": "$.StackDetails.Stacks[0].StackStatus",
+                            "StringEquals": "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS"
                           }
                         ],
                         "Next": "Wait between STATUS-CHECKS for Stack-Delete"
@@ -160,6 +163,9 @@ Resources:
                         "Or": [
                           {  "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "ROLLBACK_COMPLETE"
+                          },
+                          {  "Variable": "$.StackDetails.Stacks[0].StackStatus",
+                            "StringEquals": "UPDATE_ROLLBACK_COMPLETE"
                           },
                           { "Variable": "$.StackDetails.Stacks[0].StackStatus",
                             "StringEquals": "CREATE_COMPLETE"
