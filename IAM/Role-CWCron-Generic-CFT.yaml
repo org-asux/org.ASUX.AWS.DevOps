@@ -1,7 +1,8 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
   This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
-  Make sure to create a new IAM-Role that follows the principle of least-access
+  Make sure to create a new IAM-Role that follows the principle of least-access.
+  To allow ANY EventBridge CRON-Rule (a.k.a. CloudWatch Cron/CWCron) to interact with __ANY__ AWS Service.
 
 Parameters:
 
@@ -10,8 +11,8 @@ Parameters:
 
   AppComponentId:
     Description: >-
-      Added as SUFFIX to name of the _NEW_ IAMRole that is created.
-      Example: StepFuncExecution-{AppComponentId}
+      Typically, the "purpose".
+      Added as SUFFIX to name of the _NEW_ IAMRole that is created, like: CWCron-{AppComponentId}
     Type: String  ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#parameters-section-structure-properties-type
 
   PermissionsBoundaryPolicyARN:
@@ -37,6 +38,14 @@ Parameters:
   # managedPolicy3:
     # Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
     # Type: String
+
+  # SNSTopicSuccessName:
+    # Type: String
+    # Description: The ARN to SNS Topic where success/failure notifications need to be sent.
+
+  # SNSTopicFailureName:
+    # Type: String
+    # Description: The ARN to SNS Topic where success/failure notifications need to be sent.
 
 
 ### ================================================================
@@ -124,10 +133,11 @@ Resources:
     Type: 'AWS::IAM::Role'    ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
     Properties:
       Path: /
-
       # RoleName: !Sub '${ProjectId}-CWCron-${AppComponentId}-${UserId}-${ENV}'
       RoleName: !Sub 'CWCron-${AppComponentId}'
+
       PermissionsBoundary: !Ref PermissionsBoundaryPolicyARN
+
       Description: >-
         This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
         Make sure to create a new IAM-Role that follows the principle of least-access
@@ -281,8 +291,8 @@ Resources:
                 - 'sns:*'
               Resource:
                 - '*'
-                # - !Ref SNSTopicSuccessARN
-                # - !Ref SNSTopicFailureARN
+                # - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicSuccessARN}"
+                # - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SNSTopicFailureARN}"
 
             ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_awscodebuild.html
             - Sid: 'CodeBuildFullPermissions'
