@@ -92,12 +92,14 @@ Resources:
     Type: 'AWS::IAM::Role'
     Properties:
       Path: /
+      RoleName: !Sub "StepFunctionExecution-${AppComponentId}"
+      # RoleName: !Sub "${ProjectId}-StepFunctionExecution-${AppComponentId}-${UserId}-${ENV}"
+
       PermissionsBoundary: !Ref PermissionsBoundaryPolicyARN
+
       Description: >-
         This is a GENERIC IAM Role that is best suited for INITIAL development, as it enables BROAD access.
         Make sure to create a new IAM-Role that follows the principle of least-access
-      RoleName: !Sub "StepFunctionExecution-${AppComponentId}"
-      # RoleName: !Sub "${ProjectId}-StepFunctionExecution-${AppComponentId}-${UserId}-${ENV}"
 
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
