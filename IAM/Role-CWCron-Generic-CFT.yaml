@@ -20,13 +20,6 @@ Parameters:
     AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):iam::\d+:policy\/[\w+=/:,.@-]{1,64}$'
     # AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):(iam|sts)::\d+:(root|(user\/[\w+=/:,.@-]{1,64}|federated-user\/[\w+=/:,.@-]{2,32}|assumed-role\/[\w+=:,.@-]{1,64}\/[\w+=,.@-]{1,64}))$'
 
-  # AWSServiceName:
-    # Description: Example values are ec2.amazonaws.com, lambda.amazonaws.com .. The AWS-Service that needs appropriate access.
-    # Type: String  ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#parameters-section-structure-properties-type
-    # Default: 'lambda.amazonaws.com'
-    # # AllowedValues:
-    # #  - xyz
-
   # managedPolicy1:
     # Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
     # Type: String
@@ -47,41 +40,9 @@ Parameters:
     # Type: String
     # Description: The ARN to SNS Topic where success/failure notifications need to be sent.
 
-
 ### ================================================================
 ### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ### ================================================================
-
-# DELETE THESE COMMENTED LINED - Resources:
-
-  # myRole3ManagedPolicies:  ### Make sure to match the 'RoleName' field below.
-
-  #   Type: 'AWS::IAM::Role'
-  #   Properties:
-  #     RoleName: myRole3ManagedPolicies    ### Make sure to match the CFT-ResourceName above.
-  #     # RoleName: !Ref myRoleName ### Variable NOT allowed !!!!!!!
-  #     Description: 3 Managed-Policies for a specific AWS-Service
-
-  #     ManagedPolicyArns:
-  #       - !Ref managedPolicy1
-  #       - !Ref managedPolicy2
-  #       - !Ref managedPolicy3
-
-  #     AssumeRolePolicyDocument:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         - Sid: "StsAssumeRole"
-  #           Effect: Allow
-  #           Principal:
-  #             Service:
-  #               - !Ref AWSServiceName
-  #           Action:
-  #             - 'sts:AssumeRole'
-
-### ================================================================
-### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-### ================================================================
-
 
 Mappings:
 
