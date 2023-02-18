@@ -23,6 +23,6 @@ PARAMETERS=(
 
 MYROLENAME="CWCron-${AppComponentId}"
 
-STACKNAME="Role-${MYROLENAME}"
+StackName="Role-${MYROLENAME}"
 
 ### EoScript

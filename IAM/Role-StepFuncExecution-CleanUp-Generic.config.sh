@@ -17,6 +17,6 @@ PARAMETERS=(
 
 MYROLENAME="StepFuncExecution-CleanUp-Generic"
 
-STACKNAME="Role-${MYROLENAME}"
+StackName="Role-${MYROLENAME}"
 
 ### EoScript

@@ -25,6 +25,6 @@ PARAMETERS=(
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###--------------------------------------------------------
 
-STACKNAME="StepFunc-${StepFuncName}"
+StackName="StepFunc-${StepFuncName}"
 
 ### EoScript

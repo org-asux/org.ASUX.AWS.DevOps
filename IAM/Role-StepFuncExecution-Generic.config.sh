@@ -27,6 +27,6 @@ PARAMETERS=(
 
 MYROLENAME="StepFuncExecution-${AppComponentId}"
 
-STACKNAME="Role-${MYROLENAME}"
+StackName="Role-${MYROLENAME}"
 
 ### EoScript
