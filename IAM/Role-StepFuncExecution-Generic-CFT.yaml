@@ -18,24 +18,24 @@ Parameters:
   PermissionsBoundaryPolicyARN:
     Type: String
     AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):iam::\d+:policy\/[\w+=/:,.@-]{1,64}$'
-    # AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):(iam|sts)::\d+:(root|(user\/[\w+=/:,.@-]{1,64}|federated-user\/[\w+=/:,.@-]{2,32}|assumed-role\/[\w+=:,.@-]{1,64}\/[\w+=,.@-]{1,64}))$'
+      # AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b):(iam|sts)::\d+:(root|(user\/[\w+=/:,.@-]{1,64}|federated-user\/[\w+=/:,.@-]{2,32}|assumed-role\/[\w+=:,.@-]{1,64}\/[\w+=,.@-]{1,64}))$'
 
   # AWSServiceName:
-  #   Description: Example values are ec2.amazonaws.com, lambda.amazonaws.com .. The AWS-Service that needs appropriate access.
-  #   Type: String  ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#parameters-section-structure-properties-type
-  #   Default: 'lambda.amazonaws.com'
+    # Description: Example values are ec2.amazonaws.com, lambda.amazonaws.com .. The AWS-Service that needs appropriate access.
+    # Type: String  ### https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html#parameters-section-structure-properties-type
+    # Default: 'lambda.amazonaws.com'
 
   # managedPolicy1:
-  #   Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
-  #   Type: String
+    # Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    # Type: String
 
   # managedPolicy2:
-  #   Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
-  #   Type: String
+    # Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    # Type: String
 
   # managedPolicy3:
-  #   Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
-  #   Type: String
+    # Description: The ARN to your a Managed-Policy that you'd like to attach to this Role
+    # Type: String
 
 
 ### ================================================================
@@ -49,37 +49,6 @@ Mappings:
       ReplicaRegion: "us-east-2"
       # ReplicaRegion: "us-west-2"
       SharedDevOpsS3Bucket: "generic-bucket-" ### Suffix this with ${AWS::AccountId} !!!
-
-  sandbox:
-
-    us-east-2:
-      VPCID: vpc-0ccb3964
-      AZ1: us-east-2a
-      AZ2: us-east-2b
-      AZ3: us-east-2c
-      ### Public subnets
-      AZ1PublicSubnet1: subnet-8f2febe7           ### 2a
-      AZ22PublicSubnet1: subnet-fdac9486           ### 2b
-      AZ333PublicSubnet1: subnet-c08af38d           ### 2c
-      ### _PRIVATE_ subnets
-      AZ1PrivateSubnet1: subnet-02e786bf96d98616a ### 2a
-      AZ22PrivateSubnet1: subnet-0bf6e4b3be5db638e ### 2b
-
-    us-west-2:
-      VPCID: vpc-030d996c578e9c81d      ### Non-CloudBoost Default-VPC = vpc-0f46a06bc3d3109b3
-      AZ1: us-west-2a
-      AZ2: us-west-2b
-      AZ3: us-west-2c
-      ### Public subnets
-      AZ1PublicSubnet1: subnet-01402c2e8dbf238ff  ### 2a Cloudboost-created
-      AZ22PublicSubnet1: subnet-07bf78999110ac80f  ### 2b Cloudboost-created
-      # AZ1PublicSubnet1: subnet-058acd86ebddc0a80  ## 2a Default
-      # AZ22PublicSubnet1: subnet-007b1b862393eff19  ## 2b Default
-      # AZ333PublicSubnet1: subnet-089d060fe13dd00f7  ## 2c Default
-      ### _PRIVATE_ subnets
-      AZ1PrivateSubnet1: subnet-0af56044ea28995c5  ### 2a Cloudboost-created
-      AZ22PrivateSubnet1: subnet-0d5aaaab5e5ca138c  ### 2b Cloudboost-created
-
 
 ### ================================================================
 ### @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -108,7 +77,7 @@ Resources:
             Effect: Allow
             Principal:
               Service:
-                - !Sub states.${AWS::Region}.amazonaws.com
+                - !Sub states.${AWS::Region}.${AWS::URLSuffix}
             Action:
               - 'sts:AssumeRole'
 
@@ -155,15 +124,10 @@ Resources:
                 - '*'
                 # - !Join
                 #   - ':'
-                #   - - 'arn:aws:logs'
+                #   - - !Sub 'arn:${AWS::Partition}:logs'
                 #     - !Ref AWS::Region
                 #     - !Ref AWS::AccountId
-                #     # - !FindInMap
-                #     #   - "Environments"
-                #     #   - !Ref "ENV"
-                #     #   - "AccountNumber"
                 #     - 'log-group:*'
-                #     # - 'log-group:/aws/lambda/*'
 
             - Sid: 'IAMPermissionsRestriction'
               Effect: Allow
@@ -180,14 +144,14 @@ Resources:
 ### !!! ATTENTION !!! NotAction 
                 - 'iam:PassRole' ### !! Attention !! WARNING !! This is MANDATORY to allow DMS to write to CW-Logs
               Resource:
-                - !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/*"
 
             - Sid: 'IAMPermissionForRolesMgmtOnly'
               Effect: Allow
               Action:
                 - 'iam:*' ### !! ATTENTION !! WARNING !! this is combined with the above _NOTACTION_ !!
               Resource:
-                - !Sub "arn:aws:iam::${AWS::AccountId}:role/*"
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/*"
 
               ### When creating EKS clusters, a special Role called "eksNodeProfileRole" is automatically associated with Node/EC2-Profiles.
               ### When using StepFunctions to "CASCASE DELETE" multiple stacks, we need this one special permission (to delete that Role).
@@ -197,7 +161,7 @@ Resources:
                 - 'iam:RemoveRoleFromInstanceProfile'
                 - 'iam:DeleteInstanceProfile'
               Resource:
-                - !Sub "arn:aws:iam::${AWS::AccountId}:instance-profile/*"
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:instance-profile/*"
 
             - Sid: 'KMSAll' ### Needed to access encrypted SSM-Parameters and of course ANY Secret
               Effect: Allow
@@ -206,13 +170,7 @@ Resources:
                 # - 'kms:Decrypt'
                 # - 'kms:GenerateDataKey*'
               Resource:
-                # - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*"
-                - !Join
-                  - ':'
-                  - - 'arn:aws:kms'
-                    - !Ref AWS::Region
-                    - !Ref AWS::AccountId
-                    - 'key/*'
+                - !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/*"
 
             - Sid: readSecrets
               Effect: Allow
@@ -220,7 +178,7 @@ Resources:
                   - 'secretsmanager:GetSecretValue'
                   - 'secretsmanager:DescribeSecret'
               Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*"
+                - !Sub "arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:*"
 
             - Sid: 'SSMParameterPermission'
               Effect: Allow
@@ -228,7 +186,7 @@ Resources:
                 - 'ssm:GetParameter'
                 - 'ssm:PutParameter'
               Resource:
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:*"
+                - !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:*"
 
             - Sid: 'S3LimitedAccess'
               Effect: Allow
@@ -271,7 +229,7 @@ Resources:
                 - 's3:DeleteObjectVersionTagging'
                 # - 's3:DeleteObjects' ## DOES _NOT_ exist.
               Resource:
-                - !Sub [ "arn:aws:s3:::${BKTPREFIX}${AWS::AccountId}/*", { "BKTPREFIX": !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] } ]
+                - !Sub [ "arn:${AWS::Partition}:s3:::${BKTPREFIX}${AWS::AccountId}/*", { "BKTPREFIX": !FindInMap [ Environments, !Ref 'ENV', SharedDevOpsS3Bucket ] } ]
                         ### This line will lead to the expression which will IGNORE topmost-level objects
 
             - Sid: 'SQSPermission'
@@ -280,7 +238,7 @@ Resources:
                 - 'sqs:*'
               Resource:
                 # - '*'
-                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:*"
+                - !Sub "arn:${AWS::Partition}:sqs:${AWS::Region}:${AWS::AccountId}:*"
 
             - Sid: 'SNSPermission'
               Effect: Allow
@@ -290,7 +248,7 @@ Resources:
                 # - '*'
                 # - !Ref SNSTopicSuccessARN
                 # - !Ref SNSTopicFailureARN
-                - !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
+                - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:*'
 
             - Sid: 'CodeBuildFullPermissions'
               Effect: Allow
@@ -326,7 +284,7 @@ Resources:
                 # - 'lambda:InvokeFunction'
               Resource:
                 # - '*'
-                - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:*'
+                - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:*'
 
             - Sid: 'ELBFullAccess'
               Effect: Allow
@@ -334,12 +292,12 @@ Resources:
                 - 'elasticloadbalancing:*'
               Resource:
                 ### https://docs.aws.amazon.com/service-authorization/latest/reference/list_elasticloadbalancingv2.html
-                # - '*'
-                - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:*'
-                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/*'
-                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:listener/*'
-                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:listener-rule/*'
-                # - !Sub 'arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:loadbalancer/*'
+                - '*'   ### !!!!! ATTENTION !!!!! Using `*` as CLBs do _NOT_ have ARNs.
+                # - !Sub 'arn:${AWS::Partition}:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:*'
+                # - !Sub 'arn:${AWS::Partition}:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:targetgroup/*'
+                # - !Sub 'arn:${AWS::Partition}:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:listener/*'
+                # - !Sub 'arn:${AWS::Partition}:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:listener-rule/*'
+                # - !Sub 'arn:${AWS::Partition}:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:loadbalancer/*'
 
             - Sid: 'EKSFullAccess'
               Effect: Allow
@@ -347,7 +305,7 @@ Resources:
                 - 'eks:*'
               Resource:
                 # - '*'
-                - !Sub 'arn:aws:eks:${AWS::Region}:${AWS::AccountId}:*'
+                - !Sub 'arn:${AWS::Partition}:eks:${AWS::Region}:${AWS::AccountId}:*'
 
             - Sid: 'AutoScalingFullAccess'
               Effect: Allow
@@ -355,7 +313,7 @@ Resources:
                 - 'autoscaling:*'
               Resource:
                 # - '*'
-                - !Sub 'arn:aws:autoscaling:${AWS::Region}:${AWS::AccountId}:*'
+                - !Sub 'arn:${AWS::Partition}:autoscaling:${AWS::Region}:${AWS::AccountId}:*'
 
             - Sid: 'StepFunctionFullAccess'
               Effect: Allow
@@ -366,7 +324,7 @@ Resources:
                 # - 'states:StopExecution'
               Resource:
                 # - '*'
-                - !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*'
+                - !Sub 'arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:stateMachine:*'
 
             - Sid: 'AWSDMSPermission'
               Effect: Allow
@@ -374,7 +332,7 @@ Resources:
                 - 'dms:*'
               Resource:
                 # - '*'
-                - !Sub 'arn:aws:dms:${AWS::Region}:${AWS::AccountId}:*'
+                - !Sub 'arn:${AWS::Partition}:dms:${AWS::Region}:${AWS::AccountId}:*'
 
             - Sid: 'SomeHackerIsGoingToTakeAdvantage'
               Action:
