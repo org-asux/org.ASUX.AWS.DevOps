@@ -46,12 +46,7 @@ Resources:
       StateMachineType: STANDARD
       StateMachineName: !Ref StepFuncName
 
-      RoleArn: !Join
-        - ':'
-        - - 'arn:aws:iam'
-          - "" ### IAM ARNs do NOT have AWS::Region in it
-          - !Ref 'AWS::AccountId'
-          - !Sub 'role/${StepFuncExecutionRoleName}'    ### !!! ATTENTION !!! Remove/Replace the line
+      RoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/${StepFuncExecutionRoleName}"
 
       ### https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-choice-state.html
       ### ADVANCED (External Inputs): https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html#connect-wait-token
