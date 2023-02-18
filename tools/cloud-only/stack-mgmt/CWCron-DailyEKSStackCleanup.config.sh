@@ -8,7 +8,7 @@ ArchLayer="Administration"
 
 StepFuncName="DeleteStacksInSequence"
 EventBridgeExecutionRoleName="CWCron-Generic"
-SNSTopicName="sandbox-DefaultAllPurposeNotifChannel"    ### Not the ARN.  Just the name
+SNSTopicName="DefaultAllPurposeNotifChannel-${ENV}"    ### Not the ARN.  Just the name
 EventBusName="default"      ### The Name of the EventBus. NOT the ARN !!!  Typically, leave it UN-specified, when 'default' is used
 
 ###--------------------------------------------------------
@@ -25,6 +25,6 @@ PARAMETERS=(
 ###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###--------------------------------------------------------
 
-STACKNAME="CWCron-DailyEKSStackCleanup"
+StackName="CWCron-DailyEKSStackCleanup"
 
 ### EoScript
