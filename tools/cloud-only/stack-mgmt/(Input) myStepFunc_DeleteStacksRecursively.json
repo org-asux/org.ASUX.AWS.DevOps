@@ -1,13 +1,16 @@
 {
-    "SNSTopicName": "sandbox-DefaultAllPurposeNotifChannel",
+    "SNSTopicName": "DefaultAllPurposeNotifChannel-sandbox",
     "deleteInSequence": [
+        "Role-EKS-AWSLoadBalancerController",
 
         { "deleteInParallel": [
             "EKS-Nodegroup-primary-sandbox",
             "EKS-Nodegroup-deprecated-primary-sandbox",
-            "EKS-NodeLaunchTemplate-primary-sandbox",
-            "EKS-OIDCProvider-primary-sandbox"
-        ]},
+            "EKS-OIDCProvider-primary-sandbox",
+            "Role-EKS-VPC-CNI-Policy"
+            ]},
+            
+        "EKS-NodeLaunchTemplate-primary-sandbox",
 
         { "deleteInParallel": [
             "EKS-AllinOne-primary-sandbox",

@@ -1,6 +1,6 @@
 
 {
-    "SNSTopicName": "sandbox-DefaultAllPurposeNotifChannel",
+    "SNSTopicName": "DefaultAllPurposeNotifChannel-sandbox",
 
     "deleteInSequence": [
         { "deleteInParallel": [
