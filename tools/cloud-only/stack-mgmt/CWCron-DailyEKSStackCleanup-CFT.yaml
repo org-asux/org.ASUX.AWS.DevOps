@@ -20,7 +20,7 @@ Parameters:
  
   SNSTopicName:
     Type: String
-    Default: "sandbox-DefaultAllPurposeNotifChannel"  ### Check my "SNS" folder for CFT to create this "All-Purpose" SNS Topic.
+    Default: "DefaultAllPurposeNotifChannel-sandbox"  ### Check my "SNS" folder for CFT to create this "All-Purpose" SNS Topic.
     Description: "Not the ARN.  Just the name"
 
   ### --------------------- OPTIONAL PARAMETERS ------------------------
@@ -50,7 +50,7 @@ Resources:
       RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${EventBridgeExecutionRoleName}'    ### !!! ATTENTION !!! Remove/Replace the line
 
       Targets: 
-        - Id: "RunningEC2StatusTriggersStepFn"
+        - Id: "CronTriggerStepFunc2CleanupEKSStacks"  ### Match this with the CFT-ResourceName above.
           Arn: !Sub 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${StepFuncName}'
 
           RoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${EventBridgeExecutionRoleName}'    ### !!! ATTENTION !!! Remove/Replace the line
@@ -67,7 +67,8 @@ Resources:
                     { "deleteInParallel": [
                         "EKS-Nodegroup-primary-sandbox",
                         "EKS-Nodegroup-deprecated-primary-sandbox",
-                        "EKS-OIDCProvider-primary-sandbox"
+                        "EKS-OIDCProvider-primary-sandbox",
+                        "Role-EKS-VPC-CNI-Policy"
                     ]},
 
                     "EKS-NodeLaunchTemplate-primary-sandbox",
@@ -75,8 +76,8 @@ Resources:
                     {
                       "deleteInParallel": [
                         "EKS-AllinOne-primary-sandbox",
-                        {
-                          "deleteInSequence": [
+
+                        { "deleteInSequence": [
                             "SG-EKS-k8s-EC2Node",
                             "EKS-primary-sandbox"
                           ]
@@ -94,6 +95,7 @@ Resources:
 
                         "Role-EKS-ConnectorAgent",
                         "Role-EKS-AWSLoadBalancerController",
+                        "Policy-EKS-AWSLoadBalancerController",
                         "Role-EKS-LamdaAdmin",
                         "Role-EKS-NodeProfile",
                         "Role-EKS-ClusterMgr",
