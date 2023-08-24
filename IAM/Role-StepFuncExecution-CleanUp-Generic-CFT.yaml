@@ -184,7 +184,7 @@ Resources:
               Action:
                 - 'sns:Delete*'
                 - 'sns:Remove*'
-                - 'SNS:Publish*'
+                - 'sns:Publish*'
               Resource:
                 - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:*'
 
